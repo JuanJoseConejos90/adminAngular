@@ -26,6 +26,12 @@ export class ProductsService {
     return this.http.post<response>(`${environment.apiUrl}/products/createProduct`, formData, { 'headers': headers });
   }
 
+  editProducts(formData: FormData) {
+    const headers = new HttpHeaders()
+      .set('Access-Control-Allow-Origin', '*')
+    return this.http.post<response>(`${environment.apiUrl}/products/updateProduct`, formData, { 'headers': headers });
+  }
+
 
   deleteProduct(id: number) {
     return this.http.delete<response>(`${environment.apiUrl}/products/deleteProduct/${id}`);

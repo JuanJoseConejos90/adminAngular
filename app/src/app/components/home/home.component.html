@@ -10,180 +10,135 @@
         <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
       </li>
     </ul>
-    <button class="btn btn-outline-success my-2 my-sm-0" (click)="show()">Crear</button>
   </div>
 </nav>
 
-<div class="container" id="containerTable">
-  <table class="table table-striped">
-    <thead>
+<div class="card">
+  <p-toolbar styleClass="p-mb-4">
+    <ng-template pTemplate="left">
+      <button pButton pRipple label="New" icon="pi pi-plus" class="p-button-success p-mr-2"
+        (click)="openNew()"></button>
+    </ng-template>
+  </p-toolbar>
+
+  <p-table #dt [value]="products" [rows]="10" [paginator]="true"
+    [globalFilterFields]="['name','category','detail','price','isPromotion','sale']" [(selection)]="selectedProducts"
+    [rowHover]="true" dataKey="product.id"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showCurrentPageReport]="true">
+    <ng-template pTemplate="caption">
+      <div class="p-d-flex p-ai-center p-jc-between">
+        <h5 class="p-m-0">Manage Products</h5>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="header">
       <tr>
-        <th scope="col">id</th>
-        <th scope="col">Product</th>
-        <th scope="col">Category</th>
-        <th scope="col">Detail</th>
-        <th scope="col">Price</th>
-        <th scope="col">isPromotion</th>
-        <th scope="col">Sale</th>
-        <th scope="col">Editar</th>
-        <th scope="col">Eliminar</th>
+        <th style="width: 3rem">
+          <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+        </th>
+        <th pSortableColumn="name">Product <p-sortIcon field="name"></p-sortIcon>
+        </th>
+        <th>Image</th>
+        <th pSortableColumn="category">Category <p-sortIcon field="category"></p-sortIcon>
+        </th>
+        <th pSortableColumn="details">Details <p-sortIcon field="details"></p-sortIcon>
+        </th>
+        <th pSortableColumn="price">Price <p-sortIcon field="price"></p-sortIcon>
+        </th>
+        <th pSortableColumn="isPromotion">Promotion <p-sortIcon field="isPromotion"></p-sortIcon>
+        </th>
+        <th pSortableColumn="sale">Sale <p-sortIcon field="sale"></p-sortIcon>
+        </th>
+        <th></th>
       </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let product of products">
-        <td>{{product.id}}</td>
+    </ng-template>
+    <ng-template pTemplate="body" let-product>
+      <tr>
+        <td>
+          <p-tableCheckbox [pSelectableRow]="product" [value]="product"></p-tableCheckbox>
+        </td>
         <td>{{product.name}}</td>
+        <td><img [src]="product.image" [alt]="product.name" width="100" class="p-shadow-4" /></td>
         <td>{{product.category}}</td>
         <td>{{product.detail}}</td>
         <td>{{product.price}}</td>
         <td>{{product.isPromotion}}</td>
         <td>{{product.sale}}</td>
         <td>
-          <button type="button" class="btn btn-outline-success btn-sm"
-            (click)="getProductById(product.id)">Edit</button>
-        </td>
-        <td>
-          <button type="button" class="btn btn-outline-danger btn-sm"
-            (click)="deleteProduct(product.id)">Delete</button>
+          <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success p-mr-2"
+            (click)="editProduct(product)"></button>
+          <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
+            (click)="deleteSelectedProducts(product)"></button>
         </td>
       </tr>
-    </tbody>
-  </table>
+    </ng-template>
+    <ng-template pTemplate="summary">
+      <div class="p-d-flex p-ai-center p-jc-between">
+        In total there are {{products ? products.length : 0 }} products.
+      </div>
+    </ng-template>
+  </p-table>
 </div>
 
-<div class="modal c" id="myModal" [style.display]="showModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">{{ title }}</h4>
-        <button type="button" class="close" data-dismiss="modal" (click)="hide()">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group col-md-6">
-            <label for="name">Product</label>
-            <input type="text" class="form-control" id="name" [ngModel]="name" (change)="onChangeName($event)"
-              placeholder="Product Name">
-          </div>
-          <div class="form-group col-md-6">
-            <label for="inputPassword4">Category</label>
-            <select id="inputState" class="form-control" (change)="onChangeCategory($event)">
-              <option selected>Choose...</option>
-              <option value="Desayuno">Desayuno</option>
-              <option value="Almuerzo">Almuerzo</option>
-              <option value="Cena">Cena</option>
-              <option value="Postre">Postre</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="detail">Detail</label>
-          <input type="text" class="form-control" id="detail" [ngModel]="detail" (change)="onChangeDetail($event)"
-            placeholder="Details">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-md-6">
-            <label for="price">Price</label>
-            <input type="number" class="form-control" id="price" [ngModel]="price" (change)="onChangePrice($event)"
-              placeholder="Price">
-          </div>
-          <div class="form-group col-md-6">
-            <label for="sale">Sale</label>
-            <input type="number" class="form-control" id="sale" [ngModel]="sale" (change)="onChangeSale($event)"
-              placeholder="Sale">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="inputAddress">File</label>
-          <input type="file" id="image" name="image" (change)="onFileSelect($event)" class="form-control">
-        </div>
-
-      </div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-success btn-sm" (click)="addProducts()">Save</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" data-dismiss="modal" (click)="hide()">Close</button>
-      </div>
-
+<p-dialog [(visible)]="productDialog" [style]="{width: '750px'}" header="Product Details" [modal]="true"
+  styleClass="p-fluid">
+  <ng-template pTemplate="content">
+    <img [src]="product.image" [alt]="product.image" class="ImageDetails" *ngIf="product.image">
+    <div class="p-field" *ngIf="!product.image">
+      <label for="image">Image</label>
+      <p-fileUpload name="demo[]" (onSelect)="changeFile($event)" [multiple]="multiple" accept="image/*">
+        <ng-template pTemplate="content">
+          <ul *ngIf="uploadedFiles.length">
+            <li *ngFor="let file of uploadedFiles">{{file.name}} - {{file.size}} bytes</li>
+          </ul>
+        </ng-template>
+      </p-fileUpload>
     </div>
-  </div>
-</div>
 
-
-
-<div class="modal c" id="myModal" [style.display]="showModalEdit ? 'block' : 'none'">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">{{title}}</h4>
-        <button type="button" class="close" data-dismiss="modal" (click)="hideEdit()">&times;</button>
-      </div>
-
-      <!-- Modal body -->
-      <div class="modal-body" *ngIf="showModalEdit">
-        <div className="row">
-          <div className="col-md-4">
-            <div className="row">
-              <div className="col-md-12">
-                <img className="img-fluid" [src]="productsEdit[0].image" class="ImageDetails" />
-              </div>
-            </div>
-          </div>
-          <div className="col-md-8">
-
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="name">Product</label>
-                <input type="text" class="form-control" id="name" [ngModel]="productsEdit[0].name"
-                  placeholder="Product Name">
-              </div>
-              <div class="form-group col-md-6">
-                <label for="inputPassword4">Category</label>
-                <select id="inputState" class="form-control" [ngModel]="productsEdit[0].category">
-                  <option value="Desayuno">Desayuno</option>
-                  <option value="Almuerzo">Almuerzo</option>
-                  <option value="Cena">Cena</option>
-                  <option value="Postre">Postre</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="detail">Detail</label>
-              <input type="text" class="form-control" id="detail" [ngModel]="productsEdit[0].detail"
-                placeholder="Details">
-            </div>
-
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="price">Price</label>
-                <input type="number" class="form-control" id="price" [ngModel]="productsEdit[0].price"
-                  placeholder="Price">
-              </div>
-              <div class="form-group col-md-6">
-                <label for="sale">Sale</label>
-                <input type="number" class="form-control" id="sale" [ngModel]="productsEdit[0].sale" placeholder="Sale">
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-success btn-sm">Edit</button>
-        <button type="button" class="btn btn-outline-danger btn-sm" data-dismiss="modal"
-          (click)="hideEdit()">Close</button>
-      </div>
-
+    <div class="p-field">
+      <label for="name">Product Name</label>
+      <input type="text" pInputText id="name" [(ngModel)]="product.name" required autofocus />
+      <small class="p-error" *ngIf="submitted && !product.name">Name is required.</small>
     </div>
-  </div>
-</div>
+
+    <div class="p-field">
+      <label for="category">Category</label>
+      <p-dropdown [(ngModel)]="product.category" inputId="category" [options]="categoryProduct"
+        placeholder="Select category">
+        <ng-template let-option pTemplate="item">
+          <span>{{option.label}}</span>
+        </ng-template>
+      </p-dropdown>
+    </div>
+
+    <div class="p-field">
+      <label for="detail">Detail</label>
+      <textarea id="detail" pInputTextarea [(ngModel)]="product.detail" required rows="3" cols="20"></textarea>
+    </div>
+
+    <div class="p-formgrid p-grid">
+      <div class="p-field p-col">
+        <label for="price">Price</label>
+        <p-inputNumber id="price" [(ngModel)]="product.price" mode="currency" currency="USD" locale="en-US">
+        </p-inputNumber>
+      </div>
+      <div class="p-field p-col">
+        <label for="sale">Sale</label>
+        <p-inputNumber id="sale" [(ngModel)]="product.sale" mode="currency" currency="USD" locale="en-US">
+        </p-inputNumber>
+      </div>
+    </div>
+
+
+  </ng-template>
+
+  <ng-template pTemplate="footer">
+    <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="hideDialog()"></button>
+    <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-text" (click)="saveProduct()"
+      *ngIf="!editable"></button>
+    <button pButton pRipple label="Edit" icon="pi pi-check" class="p-button-text" (click)="editableProduct()"
+      *ngIf="editable"></button>
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+<p-toast></p-toast>

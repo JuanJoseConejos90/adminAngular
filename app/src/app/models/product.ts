@@ -1,12 +1,12 @@
 export interface Product {
   id: number;
-  name: String;
-  category: String;
-  detail: String;
-  price: String;
-  isPromotion: boolean;
-  sale: String;
-  image: any;
+  name?: String;
+  category?: String;
+  detail?: String;
+  price?: number;
+  isPromotion?: boolean;
+  sale?: number;
+  image?: any;
 }
 
 export interface responseProducts {

@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ProductsService } from './../../services/products.service';
 import { map } from 'rxjs/operators';
 import { Product } from './../../models/product';
+import { ConfirmationService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
 
 
 @Component({
@@ -13,24 +15,31 @@ import { Product } from './../../models/product';
 export class HomeComponent implements OnInit {
 
 
-  products: Product[] = [];
-  productsEdit: Product[] = [];
-  file: [] = [];
-  showModal: boolean = false;
-  showModalEdit: boolean = false;
-  title: any;
-  name: any;
-  category: any;
-  detail: any;
-  price: any;
-  isPromotion: any;
-  sale: any;
-  image: any;
+  products: Product[];
+  product: Product;
+  categoryProduct: any[];
+  file: [];
+  selectedProducts: Product[];
+  uploadedFiles: any[] = [];
+  productDialog: boolean = false;
+  submitted: boolean;
+  multiple: boolean = false;
+  editable: boolean = false;
 
-  constructor(private productService: ProductsService) { }
+
+  constructor(private productService: ProductsService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService) { }
 
   ngOnInit(): void {
     this.getData();
+    this.categoryProduct = [
+      { label: 'Desayuno', value: 'Desayuno' },
+      { label: 'Almuerzo', value: 'Almuerzo' },
+      { label: 'Postre', value: 'Postre' },
+      { label: 'Cena', value: 'Cena' }
+    ];
+
   }
 
   getData() {
@@ -45,7 +54,7 @@ export class HomeComponent implements OnInit {
             price: item.price,
             isPromotion: item.isPromotion,
             sale: item.sale,
-            image: null
+            image: item.image
           }
           return product
         })
@@ -54,28 +63,9 @@ export class HomeComponent implements OnInit {
   }
 
   clearData() {
-    this.showModal = false;
-    this.title = "";
-    this.name = "";
-    this.category = "";
-    this.detail = "";
-    this.price = "";
-    this.isPromotion = "";
-    this.sale = "";
-  }
-
-
-  show() {
-    this.showModal = true;
-    this.title = "Add";
-  }
-
-  hide() {
-    this.showModal = false;
-  }
-
-  hideEdit() {
-    this.showModalEdit = false;
+    this.product = {} as Product;
+    this.productDialog = false;
+    this.editable = false;
   }
 
   onFileSelect(event: any) {
@@ -85,51 +75,23 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  onChangeCategory(event: any) {
-    if (event.target.value) {
-      const category = event.target.value;
-      this.category = category;
+  changeFile(event: any) {
+    if (event.files.length > 0) {
+      const file = event.files[0];
+      this.file = file;
     }
   }
 
-  onChangeName(event: any) {
-    if (event.target.value) {
-      const name = event.target.value;
-      this.name = name;
-    }
-  }
-
-  onChangeDetail(event: any) {
-    if (event.target.value) {
-      const detail = event.target.value;
-      this.detail = detail;
-    }
-  }
-
-  onChangePrice(event: any) {
-    if (event.target.value) {
-      const price = event.target.value;
-      this.price = price;
-    }
-  }
-
-  onChangeSale(event: any) {
-    if (event.target.value) {
-      const sale = event.target.value;
-      this.sale = sale;
-    }
-  }
-
-  addProducts() {
+  saveProduct() {
 
     let formData: any = new FormData();
-    let promo = this.sale > 0 ? 1 : 0;
-    formData.append("productName", this.name);
-    formData.append("category", this.category);
-    formData.append("detail", this.detail);
-    formData.append("price", parseFloat(this.price));
+    let promo = 0;
+    formData.append("productName", this.product.name);
+    formData.append("category", this.product.category);
+    formData.append("detail", this.product.detail);
+    formData.append("price", this.product.price);
     formData.append("isPromotion", promo);
-    formData.append("sale", parseFloat(this.sale));
+    formData.append("sale", this.product.sale);
     formData.append("file", this.file);
 
     this.productService.createdProducts(formData)
@@ -137,6 +99,31 @@ export class HomeComponent implements OnInit {
         if (data.code === 0) {
           this.getData();
           this.clearData();
+        }
+      }
+      );
+
+  }
+
+  editableProduct() {
+
+    let formData: any = new FormData();
+    let promo = 0;
+    formData.append("id", this.product.id);
+    formData.append("productName", this.product.name);
+    formData.append("category", this.product.category);
+    formData.append("detail", this.product.detail);
+    formData.append("price", this.product.price);
+    formData.append("isPromotion", promo);
+    formData.append("sale", this.product.sale);
+    formData.append("file", (this.file ? this.file : null));
+
+    this.productService.editProducts(formData)
+      .subscribe(data => {
+        if (data.code === 0) {
+          this.getData();
+          this.clearData();
+          this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product edited', life: 3000 });
         }
       }
       );
@@ -156,32 +143,39 @@ export class HomeComponent implements OnInit {
 
   }
 
-  getProductById(id: number) {
-
-    if (id) {
-
-      this.productService.getById(id)
-        .pipe(map(data => {
-          return data.products.map(item => {
-            const product: Product = {
-              id: item.id,
-              name: item.name,
-              category: item.category,
-              detail: item.detail,
-              price: item.price,
-              isPromotion: item.isPromotion,
-              sale: item.sale,
-              image: item.image
+  deleteSelectedProducts(product: Product) {
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete ' + product.name + '?',
+      header: 'Confirm',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.productService.deleteProduct(product.id)
+          .subscribe(data => {
+            if (data.code === 0) {
+              this.getData();
+              this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
             }
-            return product
-          })
-        }))
-        .subscribe(data => this.productsEdit = data);
-
-      this.showModalEdit = true;
-      this.title = "Edit";
-
-    }
+          }
+          );
+      }
+    });
   }
 
+  editProduct(product: Product) {
+    this.product = { ...product };
+    this.productDialog = true;
+    this.editable = true;
+  }
+
+  hideDialog() {
+    this.productDialog = false;
+    this.submitted = false;
+  }
+
+  openNew() {
+    this.product = {} as Product;
+    this.productDialog = true;
+  }
 }
+
+
